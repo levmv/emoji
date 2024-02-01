@@ -1,4 +1,6 @@
 # emoji remover
+[![Go](https://github.com/levmv/emoji/actions/workflows/go.yml/badge.svg)](https://github.com/levmv/emoji/actions/workflows/go.yml)
+[![Go Report Card](https://goreportcard.com/report/github.com/levmv/emoji)](https://goreportcard.com/report/github.com/levmv/emoji)
 
 Simple library to remove all emoji from string. Pretty fast and with 
 very moderate memory consumption (total size of used static tables ~1kb)

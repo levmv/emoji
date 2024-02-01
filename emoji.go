@@ -77,46 +77,54 @@ func Remove(s []byte) []byte {
 func find(s []byte) (offset, size int) {
 	var (
 		i      int
+		sz     int
+		found  bool
 		streak int
 	)
-
-	for i = 0; i < len(s)-1; {
-		sz, found := lookup(s[i:])
-		if found {
-			if streak == 0 {
-				offset = i
+	for i = 0; i < len(s)-1; i += sz {
+		sz, found = lookup(s[i:])
+		if !found {
+			if streak > 0 {
+				break
 			}
-			streak++
-			size += sz
-
-			// special case of keycap emoji
-			if isKeycapSymbol(s, i) {
-				if streak == 1 && isNum(s, i) {
-					offset--
-					size++
-				} else if streak == 2 && isNum(s, i-sz) {
-					offset--
-					size++
-				}
-			}
-		} else if streak > 0 {
-			break
+			continue
 		}
-		i += sz
-	}
+		if streak == 0 {
+			// zero-width-joiner can't be first in sequence
+			if isZjw(s, i) {
+				break
+			}
+			offset = i
+		}
+		streak++
+		size += sz
 
+		// special case of keycap emoji
+		if isKeycapCase(s, i, streak) {
+			offset--
+			size++
+		}
+	}
 	return offset, size
 }
 
-func isKeycapSymbol(s []byte, i int) bool {
-	return s[i] == 0xe2 && s[i+1] == 0x83 && s[i+2] == 0xA3
+func isZjw(s []byte, i int) bool {
+	return s[i] == 0xe2 && s[i+1] == 0x80 && s[i+2] == 0x8d
 }
 
-func isNum(s []byte, i int) bool {
-	if i == 0 {
+func isKeycapCase(s []byte, i int, streak int) bool {
+	if s[i] != 0xe2 || s[i+1] != 0x83 || s[i+2] != 0xA3 || streak > 2 {
 		return false
 	}
-	return (0x23 <= s[i-1] && s[i-1] <= 0x39)
+	if streak == 1 && isNum(s[i-1]) {
+		return true
+	}
+	// here streak == 2, so we have some emoji rune before and it's must be uFE0F
+	return i > 3 && isNum(s[i-4])
+}
+
+func isNum(b byte) bool {
+	return b <= 0x39 && 0x23 <= b
 }
 
 // lookup return byte size of rune and if it's emoji rune

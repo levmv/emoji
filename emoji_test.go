@@ -1,7 +1,7 @@
 package emoji
 
 import (
-	"slices"
+	"bytes"
 	"testing"
 
 	"github.com/levmv/emoji/internal/data"
@@ -18,6 +18,7 @@ var findCases = []struct {
 	{"🐨🐨🐨", 0, 12},
 	{"foo⏰", 3, 3}, {"foo⏰ ⏰", 3, 3},
 	{"foo⏰⏰", 3, 6},
+	{"র‍্য", 0, 0},
 }
 
 var removeTests = []string{
@@ -59,7 +60,7 @@ func TestAllRunes(t *testing.T) {
 			t.Errorf("not matched %U (%v)", c, string(c))
 		}
 	}
-	for r := '\u1000'; r < rune(0xea07f); r++ {
+	for r := '\u1000'; r < rune(0x10ffff); r++ {
 		if _, ok := rmap[r]; ok {
 			continue
 		}
@@ -86,7 +87,7 @@ func TestRemove(t *testing.T) {
 
 		s := Remove(g)
 
-		if slices.Compare(e, s) != 0 {
+		if !bytes.Equal(e, s) {
 			t.Errorf("not matched `%s`(%v) and `%s`(%v)", e, e, s, s)
 		}
 	}
