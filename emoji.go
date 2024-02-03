@@ -72,17 +72,35 @@ func Remove(s []byte) []byte {
 	return buf[:destI]
 }
 
-// find returns position and size of first found emoji in string
+// find returns position and size of first emoji in string
 // more specific, size not of single emoji, but length of a continuous sequence of any emoji runes
 func find(s []byte) (offset, size int) {
 	var (
-		i      int
-		sz     int
-		found  bool
-		streak int
+		sz, streak int
+		found      bool
 	)
-	for i = 0; i < len(s)-1; i += sz {
-		sz, found = lookup(s[i:])
+	for i := 0; i < len(s)-1; i += sz {
+		sz = 1
+		found = false
+		if s[i] > 0xbf {
+			ix := indexTable[s[i]]
+			sz = int(ix & 7)
+			ix = ix >> 3
+
+			if ix != 0 {
+				switch sz {
+				case 2:
+					found = lookupValue(ix, s[i+1])
+				case 3:
+					ix = indexTable[uint32(ix)<<6+uint32(s[i+1])]
+					found = lookupValue(ix, s[i+2])
+				case 4:
+					ix = indexTable[uint32(ix)<<6+uint32(s[i+1])]
+					ix = indexTable[uint32(ix)<<6+uint32(s[i+2])]
+					found = lookupValue(ix, s[i+3])
+				}
+			}
+		}
 		if !found {
 			if streak > 0 {
 				break
@@ -113,47 +131,18 @@ func isZjw(s []byte, i int) bool {
 }
 
 func isKeycapCase(s []byte, i int, streak int) bool {
-	if s[i] != 0xe2 || s[i+1] != 0x83 || s[i+2] != 0xA3 || streak > 2 {
+	if s[i] != 0xe2 || s[i+1] != 0x83 || s[i+2] != 0xa3 || streak > 2 {
 		return false
 	}
-	if streak == 1 && isNum(s[i-1]) {
+	if streak == 1 && i > 0 && isNum(s[i-1]) {
 		return true
 	}
-	// here streak == 2, so we have some emoji rune before and it's must be uFE0F
+	// here streak == 2, so we have some emoji rune before and so it's must be u+FE0F
 	return i > 3 && isNum(s[i-4])
 }
 
 func isNum(b byte) bool {
 	return b <= 0x39 && 0x23 <= b
-}
-
-// lookup return byte size of rune and if it's emoji rune
-func lookup(s []byte) (size int, found bool) {
-	s0 := s[0]
-	// we use 0xC0 instead 0x80 to free for use two index blocks. 80-C0 range in illegal in utf8
-	if s0 < 0xC0 {
-		return 1, false
-	}
-	i := indexTable[s0]
-
-	size = int(i & 7)
-	i >>= 3
-
-	if i == 0 { // unnecessary, but a bit faster when we have a lot 2-3 bytes input
-		return size, false
-	}
-
-	if s0 < 0xE0 { // 2-byte UTF-8
-		return size, lookupValue(i, s[1])
-	}
-
-	i = indexTable[uint32(i)<<6+uint32(s[1])]
-	if s0 < 0xF0 { // 3-byte UTF-8
-		return 3, lookupValue(i, s[2])
-	}
-
-	i = indexTable[uint32(i)<<6+uint32(s[2])]
-	return 4, lookupValue(i, s[3])
 }
 
 func lookupValue(i, v byte) bool {
