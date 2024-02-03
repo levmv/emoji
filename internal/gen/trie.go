@@ -18,7 +18,7 @@ type Node struct {
 	ValIndex int
 }
 
-func (t *Trie) Put(r rune, value byte) {
+func (t *Trie) Put(r rune) {
 	s := string(r)
 
 	node := t.Root
@@ -34,7 +34,7 @@ func (t *Trie) Put(r rune, value byte) {
 		}
 		node = c
 	}
-	node.Values[s[0]-0x80] = value
+	node.Values[s[0]-0x80] = 1
 }
 
 func (t *Trie) ProcessValues(node *Node) {

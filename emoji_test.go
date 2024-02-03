@@ -7,18 +7,22 @@ import (
 	"github.com/levmv/emoji/internal/data"
 )
 
-var findCases = []struct {
+type findCase struct {
 	in     string
 	offset int
 	size   int
-}{
+}
+
+var findCases = []findCase{
 	{"", 0, 0}, {"a", 0, 0}, {"foo", 0, 0}, {"—", 0, 0},
+	{"©\ufe0f", 2, 3}, {"®\ufe0f", 2, 3}, {"™\ufe0f", 3, 3},
+	{"©", 0, 0}, {"®", 0, 0}, {"™", 0, 0},
 	{"🐨", 0, 4},
 	{"🐨🐨", 0, 8},
 	{"🐨🐨🐨", 0, 12},
-	{"foo⏰", 3, 3}, {"foo⏰ ⏰", 3, 3},
-	{"foo⏰⏰", 3, 6},
-	{"র‍্য", 0, 0},
+	{"7️⃣7️⃣", 0, 7}, // can't detect sequence with ascii first rune
+	{"7️⃣🐨", 0, 11},
+	{"র‍্য", 0, 0}, // must not match \u200d if no emoji around
 }
 
 var removeTests = []string{
@@ -32,40 +36,27 @@ var removeTests = []string{
 	"🧔🏻‍♀.👱🏻‍♀️.👩🏼‍❤️‍💋‍👨🏿🇧🇴", "..",
 }
 
-var utfSizeCases = []struct {
-	in     string
-	expect int
-}{
-	{"a", 1},
-	{"Г", 2}, {"П", 2},
-	{"—", 3},
-	{"🐨", 4},
-}
+func init() {
 
-func TestUTFSize(t *testing.T) {
-	for _, c := range utfSizeCases {
-		sz, _ := lookup([]byte(c.in))
-		if sz != c.expect {
-			t.Errorf("for '%v' expected size %v, got %v", c.in, c.expect, sz)
+	for _, e := range data.AllEmojies {
+		if e == "" {
+			continue
 		}
+		findCases = append(findCases,
+			findCase{e, 0, len(e)},
+			findCase{"foo" + e, 3, len(e)},
+		)
 	}
 }
 
-func TestAllRunes(t *testing.T) {
-	rmap := make(map[rune]bool, len(data.AllEmojiRunes))
-	for _, c := range data.AllEmojiRunes {
-		rmap[c] = true
-
-		if _, ok := lookup([]byte(string(c))); !ok {
-			t.Errorf("not matched %U (%v)", c, string(c))
-		}
-	}
-	for r := '\u1000'; r < rune(0x10ffff); r++ {
+func TestMissmatches(t *testing.T) {
+	rmap := data.AllRunesMap()
+	for r := '\u0000'; r < rune(0x10ffff); r++ {
 		if _, ok := rmap[r]; ok {
 			continue
 		}
 
-		if _, ok := lookup([]byte(string(r))); ok {
+		if _, sz := find([]byte(string(r))); sz != 0 {
 			t.Errorf(" matched %v (%U)", string(r), r)
 		}
 	}
