@@ -37,16 +37,14 @@ var valuesTable = [56]uint64{
 	0x1fff000000000000, 0xbfffffffffff01ff, 0x01ff01ff0fffc03f, 0x809850ac00000000,
 }
 
+// Remove deletes all emoji from a string. Input must be valid utf8!
+// If no emoji found - original slice will be returned
 func Remove(s []byte) []byte {
 	if len(s) < 2 {
 		return s
 	}
 
-	var (
-		sz int
-		i  int
-		i2 int
-	)
+	var sz, i, i2 int
 
 	if i, sz = find(s); sz == 0 {
 		return s
@@ -76,28 +74,29 @@ func Remove(s []byte) []byte {
 // more specific, size not of single emoji, but length of a continuous sequence of any emoji runes
 func find(s []byte) (offset, size int) {
 	var (
-		sz, streak int
-		found      bool
+		i, sz, streak uint
+		found         bool
 	)
-	for i := 0; i < len(s)-1; i += sz {
+
+	for i = 0; i < uint(len(s)); i += sz {
 		sz = 1
 		found = false
 		if s[i] > 0xbf {
-			ix := indexTable[s[i]]
-			sz = int(ix & 7)
-			ix = ix >> 3
+			n := indexTable[s[i]]
+			sz = uint(n & 7)
+			n = n >> 3
 
-			if ix != 0 {
+			if n != 0 {
 				switch sz {
 				case 2:
-					found = lookupValue(ix, s[i+1])
+					found = lookupValue(n, s[i+1])
 				case 3:
-					ix = indexTable[uint32(ix)<<6+uint32(s[i+1])]
-					found = lookupValue(ix, s[i+2])
+					n = indexTable[uint32(n)<<6+uint32(s[i+1])]
+					found = lookupValue(n, s[i+2])
 				case 4:
-					ix = indexTable[uint32(ix)<<6+uint32(s[i+1])]
-					ix = indexTable[uint32(ix)<<6+uint32(s[i+2])]
-					found = lookupValue(ix, s[i+3])
+					n = indexTable[uint32(n)<<6+uint32(s[i+1])]
+					n = indexTable[uint32(n)<<6+uint32(s[i+2])]
+					found = lookupValue(n, s[i+3])
 				}
 			}
 		}
@@ -112,10 +111,10 @@ func find(s []byte) (offset, size int) {
 			if isZjw(s, i) {
 				break
 			}
-			offset = i
+			offset = int(i)
 		}
 		streak++
-		size += sz
+		size += int(sz)
 
 		// special case of keycap emoji
 		if isKeycapCase(s, i, streak) {
@@ -126,11 +125,11 @@ func find(s []byte) (offset, size int) {
 	return offset, size
 }
 
-func isZjw(s []byte, i int) bool {
+func isZjw(s []byte, i uint) bool {
 	return s[i] == 0xe2 && s[i+1] == 0x80 && s[i+2] == 0x8d
 }
 
-func isKeycapCase(s []byte, i int, streak int) bool {
+func isKeycapCase(s []byte, i uint, streak uint) bool {
 	if s[i] != 0xe2 || s[i+1] != 0x83 || s[i+2] != 0xa3 || streak > 2 {
 		return false
 	}
