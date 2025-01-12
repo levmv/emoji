@@ -12,7 +12,7 @@ import (
 	"github.com/levmv/emoji/internal/data"
 )
 
-const emojiTestURL = "https://unicode.org/Public/emoji/15.0/emoji-test.txt"
+const emojiTestURL = "https://unicode.org/Public/emoji/16.0/emoji-test.txt"
 
 func fetchURL(url string) (body []byte, err error) {
 	r, err := http.Get(url)
@@ -103,7 +103,7 @@ func gentrie() {
 
 func help() {
 	fmt.Println(`available commands:
-		gen - download unicode test file and generates emoji data file
+		gen - download unicode test file and generates emoji list
 		trie - generates trie data tables		
 		`)
 	os.Exit(1)
