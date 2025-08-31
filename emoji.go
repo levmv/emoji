@@ -33,9 +33,9 @@ var valuesTable = [56]uint64{
 	0xffffffffffffffff, 0xffffffffcecfffff, 0xffb9ffffffffffff, 0xffffffffffffffff,
 	0xffffffffffffffff, 0xffffffffffffffff, 0xbfffffffffffffff, 0x3fffffffffffffff,
 	0x07f980ffffff7e00, 0x1006013000613c80, 0xfc08810a700e001c, 0xffffffffffffffff,
-	0x000000000000ffff, 0xffffffffffffffff, 0x1ff91a3ff0e7f83f, 0x00010fff00000000,
+	0x000000000000ffff, 0xffffffffffffffff, 0x1ff91a3ff1e7f83f, 0x00010fff00000000,
 	0xf7fffffffffff000, 0xffffffffffffffbf, 0xffffffffffffffff, 0xffffffffffffffff,
-	0x1fff000000000000, 0xffffffffffff83ff, 0x01ff03ff9fffc07f, 0x809850ac00000000,
+	0x1fff000000000000, 0xffffffffffffc7ff, 0x01ff87ff9fffe17f, 0x809850ac00000000,
 }
 
 // Remove deletes all emoji from a string. Input must be valid utf8!
